@@ -14,6 +14,16 @@
  * limitations under the License.
  */
 
+/*
+Histogram直方图类,
+提供2个操作:
+1，Add()添加元素
+2，ToString(buckets )以字符串的形式输出buckets个直方图信息,bin大小是篮子个数.
+
+Histogram只有一个数据成员，用vector<float>表示
+
+*/
+
 #ifndef CARTOGRAPHER_COMMON_HISTOGRAM_H_
 #define CARTOGRAPHER_COMMON_HISTOGRAM_H_
 
@@ -27,8 +37,9 @@ namespace common {
 
 class Histogram {
  public:
-  void Add(float value);
-  std::string ToString(int buckets) const;
+  void Add(float value); //添加value,可乱序
+  std::string ToString(int buckets) const;  //分为几块
+
 
  private:
   std::vector<float> values_;

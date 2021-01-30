@@ -76,3 +76,9 @@ reinterpret_cast的转换格式：reinterpret_cast <type-id> (expression)
 
 
 #endif  // CARTOGRAPHER_COMMON_PORT_H_
+
+
+/*
+参考文章：
+https://blog.csdn.net/learnmoreonce/article/details/73695061
+*/

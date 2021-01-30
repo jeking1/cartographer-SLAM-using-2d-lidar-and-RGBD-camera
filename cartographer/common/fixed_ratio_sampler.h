@@ -14,6 +14,17 @@
  * limitations under the License.
  */
 
+
+/*
+FixedRatioSampler是频率固定的采样器类，目的是从数据流中均匀的按照固定频率采样数据
+FixedRatioSampler不可拷贝,不可赋值.
+成员函数提供2种操作:
+Pulse()产生一个事件pulses,并且:如果计入采样samples，返回true
+DebugString():以string形式输出采样率
+
+*/
+
+
 #ifndef CARTOGRAPHER_COMMON_FIXED_RATIO_SAMPLER_H_
 #define CARTOGRAPHER_COMMON_FIXED_RATIO_SAMPLER_H_
 
@@ -45,11 +56,16 @@ class FixedRatioSampler {
   // number.
   const double ratio_;
 
-  int64 num_pulses_ = 0;
-  int64 num_samples_ = 0;
+  int64 num_pulses_ = 0;//产生的脉冲次数
+  int64 num_samples_ = 0;//记录的采样次数
 };
 
 }  // namespace common
 }  // namespace cartographer
 
 #endif  // CARTOGRAPHER_COMMON_FIXED_RATIO_SAMPLER_H_
+
+/*
+参考文章：
+https://blog.csdn.net/learnmoreonce/article/details/73695116
+*/
