@@ -33,7 +33,7 @@ bool FixedRatioSampler::Pulse() {
 //如果当前采样率 samples/ pulses低于固定采样率,此次事件计入采样.
   ++num_pulses_;
   if (static_cast<double>(num_samples_) / num_pulses_ < ratio_) {
-    ++num_samples_;
+    ++num_samples_;//如果当前采样率 samples/ pulses低于固定采样率,此次事件计入采样
     return true;
   }
   return false;
