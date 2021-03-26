@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+BlockingQueue类是线程安全的阻塞队列,(生产者消费者模式)
+*/
 
 #ifndef CARTOGRAPHER_COMMON_BLOCKING_QUEUE_H_
 #define CARTOGRAPHER_COMMON_BLOCKING_QUEUE_H_

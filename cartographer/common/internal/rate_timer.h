@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/*
+定义了 RateTimer-脉冲频率计数类,作用是计算在一段时间内的脉冲率
+*/
 #ifndef CARTOGRAPHER_COMMON_RATE_TIMER_H_
 #define CARTOGRAPHER_COMMON_RATE_TIMER_H_
 
@@ -38,7 +41,7 @@ class RateTimer {
  public:
   // Computes the rate at which pulses come in over 'window_duration' in wall
   // time.
-  explicit RateTimer(const common::Duration window_duration)
+  explicit RateTimer(const common::Duration window_duration)  //提供时间段Duration
       : window_duration_(window_duration) {}
   ~RateTimer() {}
 
@@ -46,6 +49,7 @@ class RateTimer {
   RateTimer& operator=(const RateTimer&) = delete;
 
   // Returns the pulse rate in Hz.
+  // 返回事件脉冲率,单位hz
   double ComputeRate() const {
     if (events_.empty()) {
       return 0.;
@@ -57,6 +61,7 @@ class RateTimer {
   // Returns the ratio of the pulse rate (with supplied times) to the wall time
   // rate. For example, if a sensor produces pulses at 10 Hz, but we call Pulse
   // at 20 Hz wall time, this will return 2.
+  // 返回真实时间与墙上挂钟时间的比率
   double ComputeWallTimeRateRatio() const {
     if (events_.empty()) {
       return 0.;
@@ -67,6 +72,7 @@ class RateTimer {
   }
 
   // Records an event that will contribute to the computed rate.
+  // 脉冲记录事件发生
   void Pulse(common::Time time) {
     events_.push_back(Event{time, ClockType::now()});
     while (events_.size() > 2 &&
@@ -77,6 +83,7 @@ class RateTimer {
   }
 
   // Returns a debug string representation.
+  // 以字符串形式返回debug描述
   std::string DebugString() const {
     if (events_.size() < 2) {
       return "unknown";
@@ -95,6 +102,7 @@ class RateTimer {
   };
 
   // Computes all differences in seconds between consecutive pulses.
+  // 计算连续脉冲之间的以秒为单位的差
   std::vector<double> ComputeDeltasInSeconds() const {
     CHECK_GT(events_.size(), 1);
     const size_t count = events_.size() - 1;
@@ -108,6 +116,7 @@ class RateTimer {
   }
 
   // Returns the average and standard deviation of the deltas.
+  // 返回增量的平均值和标准偏差
   std::string DeltasDebugString() const {
     const auto deltas = ComputeDeltasInSeconds();
     const double sum = std::accumulate(deltas.begin(), deltas.end(), 0.);

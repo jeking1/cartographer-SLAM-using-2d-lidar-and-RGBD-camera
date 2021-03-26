@@ -14,6 +14,18 @@
  * limitations under the License.
  */
 
+
+/*
+ThreadPool 是对c++11 thread的封装.
+ThreadPool是线程数量固定的线程池，不可拷贝 和复制.
+
+1，构造函数ThreadPool(int num_threads) 初始化一个线程数量固定的线程池。
+2，Schedule(std::function<void()> work_item)添加想要ThreadPool执行的函数,
+   std::thread会在线程后台依次排队执行相关函数.
+3，数据成员pool_是具体的线程，work_queue_是待执行的函数队列。
+
+
+*/
 #ifndef CARTOGRAPHER_COMMON_THREAD_POOL_H_
 #define CARTOGRAPHER_COMMON_THREAD_POOL_H_
 
@@ -72,7 +84,7 @@ class ThreadPool : public ThreadPoolInterface {
 
   void NotifyDependenciesCompleted(Task* task) LOCKS_EXCLUDED(mutex_) override;
 
-  absl::Mutex mutex_;
+  absl::Mutex mutex_;//互斥锁，保证线程安全
   bool running_ GUARDED_BY(mutex_) = true;
   std::vector<std::thread> pool_ GUARDED_BY(mutex_);
   std::deque<std::shared_ptr<Task>> task_queue_ GUARDED_BY(mutex_);
