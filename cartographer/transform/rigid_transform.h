@@ -13,6 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+transformation:变换
+translation:平移
+rotation:旋转
+scaling:缩放
+counter clock wise rotation:逆时针旋转，counter：反向
+Identity():单位矩阵,不同于线性代数的“单位”。在不同的语义下，含义会不同。
+
+*/
 
 #ifndef CARTOGRAPHER_TRANSFORM_RIGID_TRANSFORM_H_
 #define CARTOGRAPHER_TRANSFORM_RIGID_TRANSFORM_H_

@@ -40,6 +40,7 @@ class BlockingQueue {
   static constexpr size_t kInfiniteQueueSize = 0;
 
   // Constructs a blocking queue with infinite queue size.
+  //初始化队列大小,kInfiniteQueueSize=0默认不限制容量。queue_size限制容量：通过条件变量做到.
   BlockingQueue() : BlockingQueue(kInfiniteQueueSize) {}
 
   BlockingQueue(const BlockingQueue&) = delete;
@@ -49,6 +50,7 @@ class BlockingQueue {
   explicit BlockingQueue(const size_t queue_size) : queue_size_(queue_size) {}
 
   // Pushes a value onto the queue. Blocks if the queue is full.
+  //添加元素,容量不够时,阻塞等待
   void Push(T t) {
     const auto predicate = [this]() EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
       return QueueNotFullCondition();
@@ -59,6 +61,7 @@ class BlockingQueue {
   }
 
   // Like push, but returns false if 'timeout' is reached.
+  //添加元素,若超时则返回false
   bool PushWithTimeout(T t, const common::Duration timeout) {
     const auto predicate = [this]() EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
       return QueueNotFullCondition();
@@ -73,6 +76,7 @@ class BlockingQueue {
   }
 
   // Pops the next value from the queue. Blocks until a value is available.
+  //删除元素,没有元素时,阻塞等待
   T Pop() {
     const auto predicate = [this]() EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
       return !QueueEmptyCondition();
@@ -86,6 +90,7 @@ class BlockingQueue {
   }
 
   // Like Pop, but can timeout. Returns nullptr in this case.
+  //删除元素，若超时则返回false
   T PopWithTimeout(const common::Duration timeout) {
     const auto predicate = [this]() EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
       return !QueueEmptyCondition();
@@ -102,6 +107,7 @@ class BlockingQueue {
 
   // Like Peek, but can timeout. Returns nullptr in this case.
   template <typename R>
+  // 超时返回空指针
   R* PeekWithTimeout(const common::Duration timeout) {
     const auto predicate = [this]() EXCLUSIVE_LOCKS_REQUIRED(mutex_) {
       return !QueueEmptyCondition();
@@ -117,6 +123,7 @@ class BlockingQueue {
   // Returns the next value in the queue or nullptr if the queue is empty.
   // Maintains ownership. This assumes a member function get() that returns
   // a pointer to the given type R.
+  //返回下一个应该弹出的元素
   template <typename R>
   const R* Peek() {
     absl::MutexLock lock(&mutex_);

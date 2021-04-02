@@ -48,4 +48,21 @@ common文件夹主要文件及功能：
     · NormalizeAngleDifference(T difference) //将角度差转换为[-pi;pi]
     · atan2(const Eigen::Matrix<T, 2, 1>& vector)//atan2 返回原点至点(x,y)的方位角，即与 x 轴的夹角，也可以理解为计算复数 x+yi 的辐角,范围是[-pi,pi]
 
-7. common/make_unique.h
+7. common/thread_pool.h
+    ThreadPool 是对c++11 thread的封装.
+    ThreadPool是线程数量固定的线程池，不可拷贝 和复制.
+
+    · ThreadPool(int num_threads) //初始化一个线程数量固定的线程池。
+    · Schedule(std::function<void()> work_item) //添加想要ThreadPool执行的函数,
+    · std::thread //会在线程后台依次排队执行相关函数.
+    · 数据成员pool_是具体的线程，work_queue_是待执行的函数队列。
+
+8. common/blocking_queue.h
+    BlockingQueue类是线程安全的阻塞队列,(生产者消费者模式)
+
+    · 构造函数BlockingQueue()初始化队列大小,kInfiniteQueueSize=0默认不限制容量。· queue_size限制容量：通过条件变量做到.
+    · Push()添加元素,容量不够时,阻塞等待
+    · Pop()删除元素,没有元素时,阻塞等待
+    · Peek()返回下一个应该弹出的元素
+    · PushWithTimeout(),添加元素,若超时则返回false
+    · PopWithTimeout(),删除元素，若超时则返回false
