@@ -49,25 +49,39 @@ namespace {
 
 void Run() {
   constexpr double kTfBufferCacheTimeInSeconds = 10.;
+
+  //tf2_ros::Buffer是tf2 library的主要工具。Its main public API is defined by tf2_ros::BufferInterface. 
   tf2_ros::Buffer tf_buffer{::ros::Duration(kTfBufferCacheTimeInSeconds)};
+  
+  //subscribes to a appropriate topics to receive the transformation.
   tf2_ros::TransformListener tf(tf_buffer);
+  
+  //NodeOptions在/cartographer_ros/cartographer_ros/cartographer/node_options.h中定义；该struct中包含了对一些基本参数的设置，比如接收tf的timeout时间设置、子图发布周期设置等
   NodeOptions node_options;
+  
+  //TrajectoryOptions在/cartographer_ros/cartographer_ros/cartographer/trajectory_options.h中定义。
   TrajectoryOptions trajectory_options;
+
+  //将LoadOptions获取到的参数值分别赋给node_options和trajectory_options. LoadOptions函数在node_options.h中定义。
   std::tie(node_options, trajectory_options) =
       LoadOptions(FLAGS_configuration_directory, FLAGS_configuration_basename);
 
   auto map_builder =
-      cartographer::mapping::CreateMapBuilder(node_options.map_builder_options);
+      cartographer::mapping::CreateMapBuilder(node_options.map_builder_options);//cartographer::common::make_unique定义在common文件夹下的make_unique.h文件中。  
   Node node(node_options, std::move(map_builder), &tf_buffer,
-            FLAGS_collect_metrics);
+            FLAGS_collect_metrics);//Node在/cartographer_ros/cartographer_ros/cartographer/node.h中定义；在该构造函数中订阅了很多传感器的topic。收集传感器数据
+  
+  
   if (!FLAGS_load_state_filename.empty()) {
-    node.LoadState(FLAGS_load_state_filename, FLAGS_load_frozen_state);
+    node.LoadState(FLAGS_load_state_filename, FLAGS_load_frozen_state);//加载数据包数据
   }
 
   if (FLAGS_start_trajectory_with_default_topics) {
     node.StartTrajectoryWithDefaultTopics(trajectory_options);
   }
-
+    /**
+     * ros::spin() 将会进入循环， 一直调用回调函数chatterCallback(),
+     */
   ::ros::spin();
 
   node.FinishAllTrajectories();
@@ -91,10 +105,10 @@ int main(int argc, char** argv) {
   CHECK(!FLAGS_configuration_basename.empty())
       << "-configuration_basename is missing.";
 
-  ::ros::init(argc, argv, "cartographer_node");
-  ::ros::start();
+  ::ros::init(argc, argv, "cartographer_node");//初始化ROS，定义一个节点名为“cartographer_node”
+  ::ros::start();//启动ROS
 
   cartographer_ros::ScopedRosLogSink ros_log_sink;
-  cartographer_ros::Run();
+  cartographer_ros::Run();  //启动cartographer_node，并跳转到run函数中
   ::ros::shutdown();
 }

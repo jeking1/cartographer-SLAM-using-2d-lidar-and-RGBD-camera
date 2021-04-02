@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+//google采用三维 xyz:roll, pitch, yaw
 
 #ifndef CARTOGRAPHER_TRANSFORM_TRANSFORM_H_
 #define CARTOGRAPHER_TRANSFORM_TRANSFORM_H_
