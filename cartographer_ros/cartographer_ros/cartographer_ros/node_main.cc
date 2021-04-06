@@ -66,10 +66,16 @@ void Run() {
   std::tie(node_options, trajectory_options) =
       LoadOptions(FLAGS_configuration_directory, FLAGS_configuration_basename);
 
+//定义了一个cartographer::mapping::MapBuilder类型的变量map_builder, 其中，cartographer::mapping::MapBuilder这个类在/src/cartographer/cartographer/mapping/map_builder.h中定义。
   auto map_builder =
       cartographer::mapping::CreateMapBuilder(node_options.map_builder_options);//cartographer::common::make_unique定义在common文件夹下的make_unique.h文件中。  
+  
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//重要
+//Node在/cartographer_ros/cartographer_ros/cartographer_ros/node.h中定义；由.../node.cc实现
+//在该构造函数中订阅了很多传感器的topic。收集传感器数据
   Node node(node_options, std::move(map_builder), &tf_buffer,
-            FLAGS_collect_metrics);//Node在/cartographer_ros/cartographer_ros/cartographer/node.h中定义；在该构造函数中订阅了很多传感器的topic。收集传感器数据
+            FLAGS_collect_metrics);//
   
   
   if (!FLAGS_load_state_filename.empty()) {
@@ -82,7 +88,7 @@ void Run() {
     /**
      * ros::spin() 将会进入循环， 一直调用回调函数chatterCallback(),
      */
-  ::ros::spin();
+  ::ros::spin();//ROS消息回调处理函数;
 
   node.FinishAllTrajectories();
   node.RunFinalOptimization();
