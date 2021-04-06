@@ -31,6 +31,17 @@ namespace transform {
 
 // Returns the non-negative rotation angle in radians of the 3D transformation
 // 'transform'.
+
+/*
+ atan2:返回一个非负的弧度值,  double atan2(double y,double x) :计算复数 x+yi 的辐角
+ vec()：a vector expression of the imaginary part (x,y,z) 
+ norm()： for vectors, the l2 norm of *this, for matrices the Frobenius norm。
+ w()  : the w coefficient
+
+ 为何乘以2: 四元数q=[cos(θ/2),sin(θ/2)x,sin(θ/2)y,sin(θ/2)z]
+*/
+
+
 template <typename FloatType>
 FloatType GetAngle(const Rigid3<FloatType>& transform) {
   return FloatType(2) * std::atan2(transform.rotation().vec().norm(),

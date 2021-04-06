@@ -170,10 +170,12 @@ namespace depthimage_to_laserscan
     void convert(const sensor_msgs::ImageConstPtr& depth_msg, const image_geometry::PinholeCameraModel& cam_model,
         const sensor_msgs::LaserScanPtr& scan_msg, const int& scan_height) const{
       // Use correct principal point from calibration
-      const float center_x = cam_model.cx();
-      const float center_y = cam_model.cy();
+      // 使用校准的正确主要的点
+      const float center_x = cam_model.cx();  //图像中心位置x
+      const float center_y = cam_model.cy();  //图像中心位置y
 
       // Combine unit conversion (if necessary) with scaling by focal length for computing (X,Y)
+      // 结合单位转换和焦距缩放计算(x,y)
       const double unit_scaling = depthimage_to_laserscan::DepthTraits<T>::toMeters( T(1) );
       const float constant_x = unit_scaling / cam_model.fx();
 
@@ -181,27 +183,29 @@ namespace depthimage_to_laserscan
       const int row_step = depth_msg->step / sizeof(T);
 
       const int offset = (int)(center_y - scan_height/2);
-      depth_row += offset*row_step; // Offset to center of image
+      depth_row += offset*row_step; // 偏移到图像中心
 
       for(int v = offset; v < offset+scan_height_; ++v, depth_row += row_step){
-        for (int u = 0; u < (int)depth_msg->width; ++u) // Loop over each pixel in row
+        for (int u = 0; u < (int)depth_msg->width; ++u) // 在行中的每个像素上循环
         {
           const T depth = depth_row[u];
 
           double r = depth; // Assign to pass through NaNs and Infs
-          const double th = -atan2((double)(u - center_x) * constant_x, unit_scaling); // Atan2(x, z), but depth divides out
-          const int index = (th - scan_msg->angle_min) / scan_msg->angle_increment;
+          const double th = -atan2((double)(u - center_x) * constant_x, unit_scaling); // Atan2(x, z), but depth divides out 计算夹角
+          const int index = (th - scan_msg->angle_min) / scan_msg->angle_increment;   //计算对应激光数据索引
 
           if (depthimage_to_laserscan::DepthTraits<T>::valid(depth)){ // Not NaN or Inf
             // Calculate in XYZ
             double x = (u - center_x) * depth * constant_x;
             double z = depthimage_to_laserscan::DepthTraits<T>::toMeters(depth);
 
-            // Calculate actual distance
+            // Calculate actual distance 
+            // 计算激光的真实距离
             r = hypot(x, z);
           }
 
           // Determine if this point should be used.
+          // 判断激光距离是否超过预设的有效范围
           if(use_point(r, scan_msg->ranges[index], scan_msg->range_min, scan_msg->range_max)){
             scan_msg->ranges[index] = r;
           }
