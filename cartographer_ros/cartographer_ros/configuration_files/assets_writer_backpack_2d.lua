@@ -30,7 +30,7 @@ options = {
       max_range = 60.,
     },
     {
-      action = "dump_num_points",
+      action = "dump_n um_points",
     },
 
     -- Gray X-Rays. These only use geometry to color pixels.

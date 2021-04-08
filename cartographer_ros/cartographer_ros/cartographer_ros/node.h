@@ -152,6 +152,8 @@ class Node {
 
   // Returns the set of SensorIds expected for a trajectory.
   // 'SensorId::id' is the expected ROS topic name.
+//   返回轨迹所需的传感器ID集。
+// “SensorId:：id”是预期的ROS主题名称。
   std::set<::cartographer::mapping::TrajectoryBuilderInterface::SensorId>
   ComputeExpectedSensorIds(const TrajectoryOptions& options) const;
   int AddTrajectory(const TrajectoryOptions& options);
