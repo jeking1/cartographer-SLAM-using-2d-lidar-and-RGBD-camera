@@ -59,10 +59,12 @@ double DepthImageToLaserScan::angle_between_rays(const cv::Point3d& ray1, const 
 
 bool DepthImageToLaserScan::use_point(const float new_value, const float old_value, const float range_min, const float range_max) const{
   // Check for NaNs and Infs, a real number within our limits is more desirable than these.
+  // 检查NaNs和infs，选择在限制范围内的实数
   const bool new_finite = std::isfinite(new_value);
   const bool old_finite = std::isfinite(old_value);
 
   // Infs are preferable over NaNs (more information)
+  // Infs比NaNs包含更多信息
   if(!new_finite && !old_finite){ // Both are not NaN or Inf.
     if(!std::isnan(new_value)){ // new is not NaN, so use it's +-Inf value.
       return true;
@@ -71,6 +73,7 @@ bool DepthImageToLaserScan::use_point(const float new_value, const float old_val
   }
 
   // If not in range, don't bother
+  // 不在范围内不用理会
   const bool range_check = range_min <= new_value && new_value <= range_max;
   if(!range_check){
     return false;
@@ -81,6 +84,7 @@ bool DepthImageToLaserScan::use_point(const float new_value, const float old_val
   }
 
   // Finally, if they are both numerical and new_value is closer than old_value, use new_value.
+  // 全都有效，则选取更接近的那个
   const bool shorter_check = new_value < old_value;
   return shorter_check;
 }
@@ -88,9 +92,11 @@ bool DepthImageToLaserScan::use_point(const float new_value, const float old_val
 sensor_msgs::LaserScanPtr DepthImageToLaserScan::convert_msg(const sensor_msgs::ImageConstPtr& depth_msg,
         const sensor_msgs::CameraInfoConstPtr& info_msg){
   // Set camera model
+  // 设置相机模式
   cam_model_.fromCameraInfo(info_msg);
 
   // Calculate angle_min and angle_max by measuring angles between the left ray, right ray, and optical center ray
+  // 计算角度
   cv::Point2d raw_pixel_left(0, cam_model_.cy());
   cv::Point2d rect_pixel_left = cam_model_.rectifyPoint(raw_pixel_left);
   cv::Point3d left_ray = cam_model_.projectPixelTo3dRay(rect_pixel_left);
@@ -107,6 +113,7 @@ sensor_msgs::LaserScanPtr DepthImageToLaserScan::convert_msg(const sensor_msgs::
   const double angle_min = -angle_between_rays(center_ray, right_ray); // Negative because the laserscan message expects an opposite rotation of that from the depth image
 
   // Fill in laserscan message
+  // 填写激光扫描信息
   sensor_msgs::LaserScanPtr scan_msg(new sensor_msgs::LaserScan());
   scan_msg->header = depth_msg->header;
   if(output_frame_id_.length() > 0){
@@ -120,7 +127,9 @@ sensor_msgs::LaserScanPtr DepthImageToLaserScan::convert_msg(const sensor_msgs::
   scan_msg->range_min = range_min_;
   scan_msg->range_max = range_max_;
 
+
   // Check scan_height vs image_height
+  // 检查扫描高度和图像高度
   if(scan_height_/2 > cam_model_.cy() || scan_height_/2 > depth_msg->height - cam_model_.cy()){
     std::stringstream ss;
     ss << "scan_height ( " << scan_height_ << " pixels) is too large for the image height.";
@@ -128,6 +137,7 @@ sensor_msgs::LaserScanPtr DepthImageToLaserScan::convert_msg(const sensor_msgs::
   }
 
   // Calculate and fill the ranges
+  // 计算并填写范围
   const uint32_t ranges_size = depth_msg->width;
   scan_msg->ranges.assign(ranges_size, std::numeric_limits<float>::quiet_NaN());
 

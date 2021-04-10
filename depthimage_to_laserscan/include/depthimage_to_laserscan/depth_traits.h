@@ -45,6 +45,7 @@ template<typename T> struct DepthTraits {};
 template<>
 struct DepthTraits<uint16_t>
 {
+  // depth!=0?1:0
   static inline bool valid(uint16_t depth) { return depth != 0; }
   static inline float toMeters(uint16_t depth) { return depth * 0.001f; } // originally mm
   static inline uint16_t fromMeters(float depth) { return (depth * 1000.0f) + 0.5f; }
