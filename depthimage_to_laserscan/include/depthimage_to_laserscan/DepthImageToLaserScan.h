@@ -178,6 +178,11 @@ namespace depthimage_to_laserscan
     *
     */
 
+   /**
+    * tanjx的修改
+    * 订阅雷达信号
+    * 
+    */ 
   //  image_geometry::PinholeCameraModel 针孔相机模型参数    http://docs.ros.org/en/diamondback/api/image_geometry/html/c++/classimage__geometry_1_1PinholeCameraModel.html
   // 
     template<typename T>

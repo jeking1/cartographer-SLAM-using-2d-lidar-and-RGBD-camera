@@ -59,6 +59,8 @@ using TrajectoryState =
 namespace {
 // Subscribes to the 'topic' for 'trajectory_id' using the 'node_handle' and
 // calls 'handler' on the 'node' to handle messages. Returns the subscriber.
+// 使用'node_handle'为'trajectory_id'订阅topic
+// 让'handler'在节点中处理信息。
 template <typename MessageType>
 ::ros::Subscriber SubscribeWithHandler(
     void (Node::*handler)(int, const std::string&,
@@ -91,8 +93,8 @@ std::string TrajectoryStateToString(const TrajectoryState trajectory_state) {
 }  // namespace
 
 Node::Node(
-    const NodeOptions& node_options,
-    std::unique_ptr<cartographer::mapping::MapBuilderInterface> map_builder,
+    const NodeOptions& node_options,  //选项
+    std::unique_ptr<cartographer::mapping::MapBuilderInterface> map_builder,  //地图匹配
     tf2_ros::Buffer* const tf_buffer, const bool collect_metrics)//函数后面的冒号表示一个实例的赋值
     : node_options_(node_options),
       map_builder_bridge_(node_options_, std::move(map_builder), tf_buffer) {//构造函数的主体
@@ -450,12 +452,17 @@ Node::ComputeExpectedSensorIds(const TrajectoryOptions& options) const {
 }
 
 int Node::AddTrajectory(const TrajectoryOptions& options) {
+  // 根据options，得出一个sensor_ID的set
   const std::set<cartographer::mapping::TrajectoryBuilderInterface::SensorId>
       expected_sensor_ids = ComputeExpectedSensorIds(options);
+  // 根据sensor id和options，得出trajectory id
   const int trajectory_id =
       map_builder_bridge_.AddTrajectory(expected_sensor_ids, options);
+  // extrapolator是一个推算位置的类
   AddExtrapolator(trajectory_id, options);
+  // sensor_samplers是一个抽样的类
   AddSensorSamplers(trajectory_id, options);
+  // launch_subscribers订阅所有topic的主要函数
   LaunchSubscribers(options, trajectory_id);
   wall_timers_.push_back(node_handle_.createWallTimer(
       ::ros::WallDuration(kTopicMismatchCheckDelaySec),
@@ -466,10 +473,22 @@ int Node::AddTrajectory(const TrajectoryOptions& options) {
   return trajectory_id;
 }
 
+/**
+ * Launch_subscribers 
+ * 在此处订阅了传感器数据
+ * 
+ * 
+ * sensor_msgs::LaserScan
+ * http://docs.ros.org/en/melodic/api/sensor_msgs/html/msg/LaserScan.html
+ * 
+ **/
+
 void Node::LaunchSubscribers(const TrajectoryOptions& options,
                              const int trajectory_id) {
+  // computeRepeatedTopicNames：确保传进去的topic出来后是唯一的
   for (const std::string& topic :
        ComputeRepeatedTopicNames(kLaserScanTopic, options.num_laser_scans)) {
+    // SubscribeWithHandler：使用'
     subscribers_[trajectory_id].push_back(
         {SubscribeWithHandler<sensor_msgs::LaserScan>(
              &Node::HandleLaserScanMessage, trajectory_id, topic, &node_handle_,
@@ -612,6 +631,12 @@ cartographer_ros_msgs::StatusResponse Node::FinishTrajectoryUnderLock(
   return status_response;
 }
 
+/**
+ * HandleStartTrajectory是一个ROS规定的回调函数，它有它自己的参数格式。
+ * request 表达的就是调用这个服务的请求的数据结构。
+ * response 就是自定义的回复的格式。
+ * */
+
 bool Node::HandleStartTrajectory(
     ::cartographer_ros_msgs::StartTrajectory::Request& request,
     ::cartographer_ros_msgs::StartTrajectory::Response& response) {
@@ -631,6 +656,7 @@ bool Node::HandleStartTrajectory(
     }
 
     // Check if the requested trajectory for the relative initial pose exists.
+    // 检查相对初始姿态的请求轨迹是否存在。
     response.status = TrajectoryStateToStatus(
         request.relative_to_trajectory_id,
         {TrajectoryState::ACTIVE, TrajectoryState::FROZEN,
@@ -652,16 +678,19 @@ bool Node::HandleStartTrajectory(
     *trajectory_options.trajectory_builder_options
          .mutable_initial_trajectory_pose() = initial_trajectory_pose;
   }
-
+  
   if (!ValidateTrajectoryOptions(trajectory_options)) {
+    // options无效
     response.status.message = "Invalid trajectory options.";
     LOG(ERROR) << response.status.message;
     response.status.code = cartographer_ros_msgs::StatusCode::INVALID_ARGUMENT;
   } else if (!ValidateTopicNames(trajectory_options)) {
+    // 无效的topic name
     response.status.message = "Topics are already used by another trajectory.";
     LOG(ERROR) << response.status.message;
     response.status.code = cartographer_ros_msgs::StatusCode::INVALID_ARGUMENT;
   } else {
+    // 如果都成功, 所以就会添加这个主题
     response.status.message = "Success.";
     response.trajectory_id = AddTrajectory(trajectory_options);
     response.status.code = cartographer_ros_msgs::StatusCode::OK;

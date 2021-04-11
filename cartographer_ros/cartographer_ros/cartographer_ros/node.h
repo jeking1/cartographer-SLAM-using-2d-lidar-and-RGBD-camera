@@ -126,9 +126,13 @@ class Node {
     // std::string
     // it was given in its constructor. Since we rely on the topic name as the
     // unique identifier of a subscriber, we remember it ourselves.
+    // ::ros::Subscriber::getTopic()并不一定返回相同的std::string
+    // 在构造函数中给出。我们依靠topic名字作为subscriber的唯一标识符。
     std::string topic;
   };
-
+// 以下都是回调函数
+// request 表达的就是调用这个服务的请求的数据结构。
+// response 就是自定义的回复的格式。
   bool HandleSubmapQuery(
       cartographer_ros_msgs::SubmapQuery::Request& request,
       cartographer_ros_msgs::SubmapQuery::Response& response);
@@ -156,8 +160,8 @@ class Node {
 // “SensorId:：id”是预期的ROS主题名称。
   std::set<::cartographer::mapping::TrajectoryBuilderInterface::SensorId>
   ComputeExpectedSensorIds(const TrajectoryOptions& options) const;
-  int AddTrajectory(const TrajectoryOptions& options);
-  void LaunchSubscribers(const TrajectoryOptions& options, int trajectory_id);
+  int AddTrajectory(const TrajectoryOptions& options);  //增加轨迹
+  void LaunchSubscribers(const TrajectoryOptions& options, int trajectory_id);  
   void PublishSubmapList(const ::ros::WallTimerEvent& timer_event);
   void AddExtrapolator(int trajectory_id, const TrajectoryOptions& options);
   void AddSensorSamplers(int trajectory_id, const TrajectoryOptions& options);
@@ -172,6 +176,7 @@ class Node {
   void MaybeWarnAboutTopicMismatch(const ::ros::WallTimerEvent&);
 
   // Helper function for service handlers that need to check trajectory states.
+    //   需要检查轨迹状态的服务处理程序的助手函数。
   cartographer_ros_msgs::StatusResponse TrajectoryStateToStatus(
       int trajectory_id,
       const std::set<
@@ -218,6 +223,7 @@ class Node {
   std::map<int, ::cartographer::mapping::PoseExtrapolator> extrapolators_;
   std::map<int, ::ros::Time> last_published_tf_stamps_;
   std::unordered_map<int, TrajectorySensorSamplers> sensor_samplers_;
+  // unordered_map存储订阅
   std::unordered_map<int, std::vector<Subscriber>> subscribers_;
   std::unordered_set<std::string> subscribed_topics_;
   std::unordered_set<int> trajectories_scheduled_for_finish_;

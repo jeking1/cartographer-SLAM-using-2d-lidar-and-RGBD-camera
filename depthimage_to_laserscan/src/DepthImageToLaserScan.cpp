@@ -135,12 +135,13 @@ sensor_msgs::LaserScanPtr DepthImageToLaserScan::convert_msg(const sensor_msgs::
     ss << "scan_height ( " << scan_height_ << " pixels) is too large for the image height.";
     throw std::runtime_error(ss.str());
   }
-
+  
   // Calculate and fill the ranges
   // 计算并填写范围
   const uint32_t ranges_size = depth_msg->width;
   scan_msg->ranges.assign(ranges_size, std::numeric_limits<float>::quiet_NaN());
 
+  // 深度图转化为虚拟激光雷达信号
   if (depth_msg->encoding == sensor_msgs::image_encodings::TYPE_16UC1)
   {
     convert<uint16_t>(depth_msg, cam_model_, scan_msg, scan_height_);
