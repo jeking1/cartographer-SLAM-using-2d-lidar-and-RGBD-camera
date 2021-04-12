@@ -34,13 +34,13 @@
 #include <depthimage_to_laserscan/DepthImageToLaserScanROS.h>
 
 int main(int argc, char **argv){
-  ros::init(argc, argv, "depthimage_to_laserscan");
+  ros::init(argc, argv, "depthimage_to_laserscan"); //初始化
   ros::NodeHandle n;
   ros::NodeHandle pnh("~");
 
   depthimage_to_laserscan::DepthImageToLaserScanROS dtl(n, pnh);
 
-  ros::spin();
+  ros::spin(); 
 
   return 0;
 }

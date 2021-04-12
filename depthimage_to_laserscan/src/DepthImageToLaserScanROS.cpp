@@ -39,11 +39,13 @@ DepthImageToLaserScanROS::DepthImageToLaserScanROS(ros::NodeHandle& n, ros::Node
   boost::mutex::scoped_lock lock(connect_mutex_);
 
   // Dynamic Reconfigure
+  // 动态的重新配置
   dynamic_reconfigure::Server<depthimage_to_laserscan::DepthConfig>::CallbackType f;
   f = boost::bind(&DepthImageToLaserScanROS::reconfigureCb, this, _1, _2);
   srv_.setCallback(f);
 
   // Lazy subscription to depth image topic
+  // 延迟订阅深度图topic
   pub_ = n.advertise<sensor_msgs::LaserScan>("scan", 10, boost::bind(&DepthImageToLaserScanROS::connectCb, this, _1), boost::bind(&DepthImageToLaserScanROS::disconnectCb, this, _1));
 }
 
@@ -83,6 +85,7 @@ void DepthImageToLaserScanROS::disconnectCb(const ros::SingleSubscriberPublisher
   }
 }
 
+//重要
 void DepthImageToLaserScanROS::reconfigureCb(depthimage_to_laserscan::DepthConfig& config, uint32_t level){
     dtl_.set_scan_time(config.scan_time);
     dtl_.set_range_limits(config.range_min, config.range_max);

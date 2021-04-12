@@ -488,7 +488,7 @@ void Node::LaunchSubscribers(const TrajectoryOptions& options,
   // computeRepeatedTopicNames：确保传进去的topic出来后是唯一的
   for (const std::string& topic :
        ComputeRepeatedTopicNames(kLaserScanTopic, options.num_laser_scans)) {
-    // SubscribeWithHandler：使用'
+    // SubscribeWithHandler：使用'node_handle'为'trajectory_id'订阅'topic'，并在'node'上调用'handler'来处理消息。 返回订阅者。
     subscribers_[trajectory_id].push_back(
         {SubscribeWithHandler<sensor_msgs::LaserScan>(
              &Node::HandleLaserScanMessage, trajectory_id, topic, &node_handle_,

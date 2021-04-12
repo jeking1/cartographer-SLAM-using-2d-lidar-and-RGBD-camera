@@ -178,11 +178,9 @@ namespace depthimage_to_laserscan
     *
     */
 
-   /**
-    * tanjx的修改
-    * 订阅雷达信号
-    * 
-    */ 
+
+
+
   //  image_geometry::PinholeCameraModel 针孔相机模型参数    http://docs.ros.org/en/diamondback/api/image_geometry/html/c++/classimage__geometry_1_1PinholeCameraModel.html
   // 
     template<typename T>
@@ -231,6 +229,36 @@ namespace depthimage_to_laserscan
         }
       }
     }
+
+    /**
+     * sensor_msgs::LaserScan
+     * 
+     * @param header Header 是一个结构体，包含seq、stamp、frame—id。seq扫描顺序增加的id序列，stamp激光数据的时间戳，frame-id是扫描数据的名字。
+     * @param angle_min float32 开始扫描的角度[rad]
+     * @param angle_max float32 结束扫描的角度[rad]
+     * @param angle_increment float32 每次扫描增加的角度[rad]
+     * @param time_increment float32 测量的时间间隔[seconds] //3d的才会使用
+     * @param scan_time float32 扫描的时间间隔[seconds]
+     * @param range_min float32 测距最小值[m]
+     * @param range_max float32 测距最大值[m]
+     * @param range float32[] 转一圈是360个测量数据[m]
+     * @param intensities float32[] 强度数据 如果设备不提供强度数据，则数组为空
+     * 
+     * */
+    void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg){
+      
+    }
+    /**
+    * tanjx的修改
+    * 订阅雷达信号
+    * 
+    */ 
+    void fusion_of_laser(){
+      ros::NodeHandle nh;
+      ros::Subscriber sub = nh.subscribe("/scan", 1, laserCallback);
+      ros::spin();
+    }
+
 
 // sensor_msgs/CameraInfo 参数  http://docs.ros.org/en/api/sensor_msgs/html/msg/CameraInfo.html
 
