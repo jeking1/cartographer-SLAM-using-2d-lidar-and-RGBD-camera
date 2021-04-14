@@ -67,41 +67,69 @@ namespace depthimage_to_laserscan
 		  const sensor_msgs::CameraInfoConstPtr& info_msg);
 
     /**
+     * tanjx的修改
+     * laserscan的订阅回调
+     * 
+     * 
+     * */
+    void laserCb(const sensor_msgs::LaserScan::ConstPtr& msg);
+
+    /**
      * Callback that is called when there is a new subscriber.
-     *
+     * 当有新订阅时调用的回调函数
      * Will not subscribe to the image and camera_info until we have a subscriber for our LaserScan (lazy subscribing).
-     *
+     * 在有laserscan的订阅之前，不会订阅图像和相机信息
+     * 
+     * 这里不确定会不会因为添加laserscan的订阅，导致这个函数失效
      */
     void connectCb(const ros::SingleSubscriberPublisher& pub);
 
     /**
      * Callback called when a subscriber unsubscribes.
-     *
+     * 当订阅者取消订阅时的回调
      * If all current subscribers of our LaserScan stop listening, stop subscribing (lazy subscribing).
-     *
+     * 如果laserscan的所有订阅者都停止监听，则停止订阅
      */
     void disconnectCb(const ros::SingleSubscriberPublisher& pub);
 
     /**
      * Dynamic reconfigure callback.
-     *
+     * 动态重新配置回调。
      * Callback that is used to set each of the parameters insde the DepthImageToLaserScan object.
-     *
+     * 用于设置DepthImageToLaserScan对象中的每个参数的回调。
      * @param config Dynamic Reconfigure object.
      * @param level Dynamic Reconfigure level.
      *
      */
     void reconfigureCb(depthimage_to_laserscan::DepthConfig& config, uint32_t level);
 
-    ros::NodeHandle pnh_; ///< Private nodehandle used to generate the transport hints in the connectCb.
-    image_transport::ImageTransport it_; ///< Subscribes to synchronized Image CameraInfo pairs.
-    image_transport::CameraSubscriber sub_; ///< Subscriber for image_transport
-    ros::Publisher pub_; ///< Publisher for output LaserScan messages
-    dynamic_reconfigure::Server<depthimage_to_laserscan::DepthConfig> srv_; ///< Dynamic reconfigure server
+    ros::NodeHandle pnh_; ///< Private nodehandle used to generate the transport hints in the connectCb.用于在connectCb中生成传输提示的私有nodehandle。
+    image_transport::ImageTransport it_; ///< Subscribes to synchronized Image CameraInfo pairs. 订阅同步图像camerainfo对。
+    /**
+     * image_transport::CameraSubscriber:
+     *   https://docs.ros.org/en/api/image_transport/html/camera__subscriber_8h_source.html
+     *image_transport::CameraSubscriber::CameraSubscriber	(	ImageTransport & 	image_it,
+     *             ros::NodeHandle & 	info_nh,
+     *             const std::string & 	base_topic,
+     *             uint32_t 	queue_size,
+     *             const Callback & 	callback,
+     *             const ros::VoidPtr & 	tracked_object = ros::VoidPtr(),
+     *             const TransportHints & 	transport_hints = TransportHints() 
+     *             )	
+     * */
+    image_transport::CameraSubscriber sub_; ///< Subscriber for image_transport 图像传输订阅
+    /**
+     * tanjx的修改
+     * laserscan的订阅者
+     * */
+    sensor_msgs::LaserScan laser_msg_;
+    ros::Subscriber laser_sub_;
+    ros::Publisher pub_; ///< Publisher for output LaserScan messages 输出激光扫描信息的发布者
+    dynamic_reconfigure::Server<depthimage_to_laserscan::DepthConfig> srv_; ///< Dynamic reconfigure server 动态重新配置服务器
 
-    depthimage_to_laserscan::DepthImageToLaserScan dtl_; ///< Instance of the DepthImageToLaserScan conversion class.
+    depthimage_to_laserscan::DepthImageToLaserScan dtl_; ///< Instance of the DepthImageToLaserScan conversion class. deptimageTolaserscan转换类的实例。
 
-    boost::mutex connect_mutex_; ///< Prevents the connectCb and disconnectCb from being called until everything is initialized.
+    boost::mutex connect_mutex_; ///< Prevents the connectCb and disconnectCb from being called until everything is initialized. 防止在初始化所有内容之前调用connectCb和disconnectCb。
   };
 
 
