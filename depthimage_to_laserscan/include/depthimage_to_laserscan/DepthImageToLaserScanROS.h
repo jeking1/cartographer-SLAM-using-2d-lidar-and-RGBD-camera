@@ -56,9 +56,9 @@ namespace depthimage_to_laserscan
   private:
     /**
      * Callback for image_transport
-     *
+     * 图像传输回调
      * Synchronized callback for depth image and camera info.  Publishes laserscan at the end of this callback.
-     *
+     * 深度相机和图像信息的同步回调。！！！！在此回调结束时发布laserscan
      * @param depth_msg Image provided by image_transport.
      * @param info_msg CameraInfo provided by image_transport.
      *

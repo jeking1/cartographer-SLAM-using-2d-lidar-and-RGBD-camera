@@ -245,19 +245,19 @@ namespace depthimage_to_laserscan
      * @param intensities float32[] 强度数据 如果设备不提供强度数据，则数组为空
      * 
      * */
-    void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg){
-      
-    }
     /**
     * tanjx的修改
     * 订阅雷达信号
     * 
-    */ 
-    void fusion_of_laser(){
+    */
+  void subscribe_laserscan(){
       ros::NodeHandle nh;
       ros::Subscriber sub = nh.subscribe("/scan", 1, laserCallback);
-      ros::spin();
-    }
+  }
+  sensor_msgs::LaserScanPtr fusion(sensor_msgs::LaserScanPtr& msg){
+    
+  }
+  
 
 
 // sensor_msgs/CameraInfo 参数  http://docs.ros.org/en/api/sensor_msgs/html/msg/CameraInfo.html
