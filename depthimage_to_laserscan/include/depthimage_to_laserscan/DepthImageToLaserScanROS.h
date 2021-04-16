@@ -69,8 +69,6 @@ namespace depthimage_to_laserscan
     /**
      * tanjx的修改
      * laserscan的订阅回调
-     * 
-     * 
      * */
     void laserCb(const sensor_msgs::LaserScan::ConstPtr& msg);
 

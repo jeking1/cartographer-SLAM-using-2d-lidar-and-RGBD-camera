@@ -53,6 +53,10 @@ DepthImageToLaserScanROS::~DepthImageToLaserScanROS(){
   sub_.shutdown();
 }
 
+/**
+ * tanjx修改代码
+ *
+ * */
 
 void DepthImageToLaserScanROS::depthCb(const sensor_msgs::ImageConstPtr& depth_msg,
         const sensor_msgs::CameraInfoConstPtr& info_msg){
@@ -61,6 +65,7 @@ void DepthImageToLaserScanROS::depthCb(const sensor_msgs::ImageConstPtr& depth_m
     sensor_msgs::LaserScanPtr scan_msg = dtl_.convert_msg(depth_msg, info_msg);
     //此处为tanjx修改代码
     //上面获取了深度图转化的激光雷达信号
+
     pub_.publish(scan_msg);
   }
   catch (std::runtime_error& e)
