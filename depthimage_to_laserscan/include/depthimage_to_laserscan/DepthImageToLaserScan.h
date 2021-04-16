@@ -252,7 +252,7 @@ namespace depthimage_to_laserscan
     */
   void subscribe_laserscan(){
       ros::NodeHandle nh;
-      ros::Subscriber sub = nh.subscribe("/scan", 1, laserCallback);
+      ros::Subscriber sub = nh.subscribe("/laserscan", 1, laserCallback);
   }
   sensor_msgs::LaserScanPtr fusion(sensor_msgs::LaserScanPtr& msg){
     
