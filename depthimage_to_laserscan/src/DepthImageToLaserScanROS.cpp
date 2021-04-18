@@ -65,8 +65,11 @@ void DepthImageToLaserScanROS::depthCb(const sensor_msgs::ImageConstPtr& depth_m
     sensor_msgs::LaserScanPtr scan_msg = dtl_.convert_msg(depth_msg, info_msg);
     //此处为tanjx修改代码
     //上面获取了深度图转化的激光雷达信号
+// 需要增加一个订阅雷达的代码
+    
 
-    pub_.publish(scan_msg);
+    sensor_msgs::LaserScanPtr msg = dtl_.fusion(laser_scan,scan_msg);
+    pub_.publish(msg);
   }
   catch (std::runtime_error& e)
   {

@@ -160,9 +160,9 @@ sensor_msgs::LaserScanPtr DepthImageToLaserScan::convert_msg(const sensor_msgs::
     ss << "Depth image has unsupported encoding: " << depth_msg->encoding;
     throw std::runtime_error(ss.str());
   }
-
   return scan_msg;
 }
+
 
 void DepthImageToLaserScan::set_scan_time(const float scan_time){
   scan_time_ = scan_time;

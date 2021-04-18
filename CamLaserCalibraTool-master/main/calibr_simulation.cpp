@@ -34,16 +34,20 @@ void GenerateSimData( std::vector<Oberserve>& obs)
   for (size_t i = 0; i < 50; i++)
   {
     // generate apriltage pose in camera frame, then transfrom it to world frame
+    // 在相机帧中生成一个倾斜姿态，然后将其转换为世界帧
     Eigen::Matrix3d Rca;
     
 ////////////////////////////// Try it!!! You will find the treasure /////////////////////////////////////////////////////////////////    
     // You can try rotating the calibration plate around the camera's different axes to see the observability of the system.
+    // 你可以试着绕着相机的不同轴旋转校准板来观察系统的可观察性。
     // rotate all axis
+    // 旋转所有轴
     Rca = Eigen::AngleAxisd(rpy_rand(generator),Eigen::Vector3d::UnitZ())
         *Eigen::AngleAxisd(rpy_rand(generator),Eigen::Vector3d::UnitY())
         *Eigen::AngleAxisd(rpy_rand(generator),Eigen::Vector3d::UnitX());
 
     // Try me!!! remove yaw, you will find that the system observability is not affected by Z-axis
+    // 试试我！！！去掉偏航，系统的可观测性不受Z轴的影响
     // Rca = Eigen::AngleAxisd(rpy_rand(generator),Eigen::Vector3d::UnitY())
     //     *Eigen::AngleAxisd(rpy_rand(generator),Eigen::Vector3d::UnitX());
       
@@ -113,6 +117,7 @@ int main(int argc, char **argv){
   ros::NodeHandle pnh("~");
 
   // Prepare Simulation data
+  // 准备模拟数据
   std::vector<Oberserve> obs;
   GenerateSimData(obs);
 

@@ -45,6 +45,31 @@
 
 namespace depthimage_to_laserscan
 {
+  /**
+   * -类DepthImageToLaserScan
+   * --参数
+   * ---image_geometry::PinholeCameraModel cam_model_; ///< image_geometry helper class for managing sensor_msgs/CameraInfo messages.
+   * ---float scan_time_; ///< Stores the time between scans. 存储扫描间隔时间
+   * ---float range_min_; ///< Stores the current minimum range to use.存储要使用的最小范围
+   * ---float range_max_; ///< Stores the current maximum range to use.存储要使用的最大范围
+   * ---int scan_height_; ///< Number of pixel rows to use when producing a laserscan from an area.从区域内生成激光扫描时使用的像素行数
+   * ---std::string output_frame_id_; ///< Output frame_id for each laserscan.  This is likely NOT the camera's frame_id.输出的帧的id是每个激光帧的id，但不一定是相机帧的id
+   * --函数
+   * ---DepthImageToLaserScan()
+   * ---~DepthImageToLaserScan()
+   * ---sensor_msgs::LaserScanPtr convert_msg(const sensor_msgs::ImageConstPtr& depth_msg,
+	 *			   const sensor_msgs::CameraInfoConstPtr& info_msg)
+   * ---void set_scan_time(const float scan_time)
+   * ---void set_range_limits(const float range_min, const float range_max);
+   * ---void set_scan_height(const int scan_height);
+   *  ---void set_output_frame(const std::string& output_frame_id);
+   *  ---double magnitude_of_ray(const cv::Point3d& ray) const;
+   *  ---double angle_between_rays(const cv::Point3d& ray1, const cv::Point3d& ray2) const;
+   *  ---bool use_point(const float new_value, const float old_value, const float range_min, const float range_max) const;
+   *  ---void convert(const sensor_msgs::ImageConstPtr& depth_msg, const image_geometry::PinholeCameraModel& cam_model,
+   *     const sensor_msgs::LaserScanPtr& scan_msg, const int& scan_height)
+   *
+   * */
   class DepthImageToLaserScan
   {
   public:
@@ -102,7 +127,7 @@ namespace depthimage_to_laserscan
      * angular increment.  The output scan will output the closest radius that is still not smaller than range_min.  This function
      * can be used to vertically compress obstacles into a single LaserScan.
      * scan_height 是要在输出中使用的像素的行数。这将为每个角度增量提供扫描高度的半径数。输出帧将输出不小于range_min的最近半径。这个函数可以被用于将障碍物垂直压缩为单个激光扫描帧。
-     * 
+     * double magnitude_of_ray(const cv::Point3d& ray) const;
      * @param scan_height Number of pixels centered around the center of the image to compress into the LaserScan.
      *
      */
@@ -247,15 +272,92 @@ namespace depthimage_to_laserscan
      * */
     /**
     * tanjx的修改
-    * 订阅雷达信号
+    * 激光和虚拟激光数据融合
     * 
     */
-  void subscribe_laserscan(){
-      ros::NodeHandle nh;
-      ros::Subscriber sub = nh.subscribe("/laserscan", 1, laserCallback);
+  struct laserdata{
+    std::vector<float> direction;
+    int num_index;
+  };
+  struct kinect_Triplet{
+    float x,y,z;
+  };
+  struct matrix3x3{ //R旋转矩阵
+    float m[4][4];
+    martrix3x3(){}
+  };
+  matrix3x3 R;
+  
+  struct matrix3x1{ //T平移矩阵
+    float m[4][2];
+    matrix3x1(){}
+  };
+  matrix3x1 T;
+
+  laserdata cache_first_laser_scan_,cache_virtual_laser_scan_;
+
+  bool cache_data_fg = false;
+  void set_cache_data(const std::vector<float> direction,float num_index){
+    cache_first_laser_scan_.direction = direction;
+    cache_first_laser_scan_.num_index = num_index;
   }
-  sensor_msgs::LaserScanPtr fusion(sensor_msgs::LaserScanPtr& msg){
-    
+  void cache_first_laser_scan(sensor_msgs::LaserScanPtr& scan_msg){
+    std::vector<float> direction;
+    const int num_direction = std::ceil((scan_msg->angle_max - scan_msg->angle_min) / scan_msg->angle_increment);
+    for(int i = 0; i < num_direction; ++i){
+      const float direction_temp = scan_msg->angle_min + scan_msg->angle_increment*i;
+      direction.push_back(direction_temp);
+    }
+    set_cache_data(direction,num_index);
+  }
+
+  kinect_Triplet laser_to_kinect(float r,float a,const float l = 0){
+// r,a是雷达测得的数据,r是距离，a是偏移角，而l是相机与雷达硬件在y轴(高度)上的距离，需要手动输入
+    kinect_Triplet kinect_Triplet_temp;
+    float sina = std::sin(a),cosa = std::cos(a);
+    float rsina = r*sina, rcosa = r*cosa;
+    kinect_Triplet_temp.x = R.m[1][1]*rsina+R.m[1][2]*l+R.m[1][3]*rcosa+T.m[1][1];
+    kinect_Triplet_temp.y = R.m[2][1]*rsina+R.m[2][2]*l+R.m[2][3]*rcosa+T.m[2][1];
+    kinect_Triplet_temp.z = R.m[3][1]*rsina+R.m[3][2]*l+R.m[3][3]*rcosa+T.m[3][1];
+    return kinect_Triplet_temp;
+  }
+
+  std::pair<float,float> virtual_laser_scan(kinect_Triplet kinect_Triplet_temp){
+    //因为转化后的三元组只代表一个点，因此只需要去掉y值，就是在x0z平面上的虚拟激光点。（不确定）
+    float d = std::sqrt(kinect_Triplet_temp.x*kinect_Triplet_temp.x+kinect_Triplet_temp.z*kinect_Triplet_temp.z);
+    float a = std::atan(kinect_Triplet_temp.x/kinect_Triplet_temp.z);
+    return make_pair(d,a);
+  }
+  sensor_msgs::LaserScanPtr fusion(sensor_msgs::LaserScanPtr& laser_msg,sensor_msgs::LaserScanPtr& scan_msg){
+    sensor_msgs::LaserScanPtr msg(new sensor_msgs::LaserScan());
+    msg.angle_increment = laser_msg->angle_increment;
+    msg.angle_max = laser_msg->angle_max;
+    msg.angle_min = laser_msg->angle_min;
+    msg.header = laser_msg->header;
+    msg.intensities = laser_msg->intensities;
+    msg.range_max = laser_msg->range_max;
+    msg.range_min = laser_msg->range_min;
+    msg.scan_time = laser_msg->scan_time;
+    msg.time_increment = laser_msg->time_increment;
+    msg.ranges = laser_msg->ranges;
+
+    if(!cache_data_fg){
+      cache_first_laser_scan(laser_msg);
+      cache_data_fg = true;
+    }
+    std::vector<float> laser_range (laser_msg->ranges.begin(),laser_msg->ranges.end());
+    int scan_msg_num_direction = std::ceil((scan_msg->angle_max - scan_msg->angle_min) / scan_msg->angle_increment);
+
+    for(int i = 0; i < cache_first_laser_scan_.num_index; ++i){
+      //循环遍历每个二元组(r,a)==>即(cache_first_laser_scan_.direction[i],laser_range[1])
+      kinect_Triplet kinect_Triplet_temp = laser_to_kinect(laser_msg->ranges[i],cache_first_laser_scan_.direction[i]);//暂时缺少l具体值
+      std::pair<float,float> virtual_laser_scan_temp = virtual_laser_scan(kinect_Triplet_temp); //temp.first = d,temp.second = a
+      int j = (virtual_laser_scan_temp.second - scan_msg->angle_min) / scan_msg->angle_increment; //获取该点在scan_msg中是第几个点
+      if(j < scan_msg_num_direction && j >= 0 && scan_msg->ranges[j] < virtual_laser_scan_temp.first){ //相机获得的距离比雷达获得的小，则插入相机的数据
+        msg.ranges[i] = scan_msg->ranges[j];
+      }
+    }
+    return msg;
   }
   
 
