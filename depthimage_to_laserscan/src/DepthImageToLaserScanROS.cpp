@@ -53,6 +53,7 @@ DepthImageToLaserScanROS::~DepthImageToLaserScanROS(){
   sub_.shutdown();
 }
 
+
 /**
  * tanjx修改代码
  *
@@ -67,7 +68,6 @@ void DepthImageToLaserScanROS::depthCb(const sensor_msgs::ImageConstPtr& depth_m
     //上面获取了深度图转化的激光雷达信号
 // 需要增加一个订阅雷达的代码
     
-
     sensor_msgs::LaserScanPtr msg = dtl_.fusion(laser_scan,scan_msg);
     pub_.publish(msg);
   }
@@ -89,8 +89,8 @@ void DepthImageToLaserScanROS::connectCb(const ros::SingleSubscriberPublisher& p
  * */
     image_transport::TransportHints hints("raw", ros::TransportHints(), pnh_);
     sub_ = it_.subscribeCamera("image", 10, &DepthImageToLaserScanROS::depthCb, this, hints);
-    ros::Subscriber laser_sub = pnh_.subscribe("/scan", 1, &DepthImageToLaserScanROS::laserCb);
-
+    laser_sub_ = pnh_.subscribe("/laser_scan", 1, &DepthImageToLaserScanROS::laserCb);
+    
 
   }
 }

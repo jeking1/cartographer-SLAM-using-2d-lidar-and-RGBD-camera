@@ -78,7 +78,7 @@ namespace depthimage_to_laserscan
      * Will not subscribe to the image and camera_info until we have a subscriber for our LaserScan (lazy subscribing).
      * 在有laserscan的订阅之前，不会订阅图像和相机信息
      * 
-     * 这里不确定会不会因为添加laserscan的订阅，导致这个函数失效
+     * 
      */
     void connectCb(const ros::SingleSubscriberPublisher& pub);
 
@@ -120,7 +120,6 @@ namespace depthimage_to_laserscan
      * tanjx的修改
      * laserscan的订阅者
      * */
-    sensor_msgs::LaserScan laser_msg_;
     ros::Subscriber laser_sub_;
     ros::Publisher pub_; ///< Publisher for output LaserScan messages 输出激光扫描信息的发布者
     dynamic_reconfigure::Server<depthimage_to_laserscan::DepthConfig> srv_; ///< Dynamic reconfigure server 动态重新配置服务器
