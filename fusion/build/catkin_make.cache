@@ -1,0 +1,2 @@
+depthimage_to_laserscan
+-DCATKIN_DEVEL_PREFIX=/home/willingham/fusion/devel -DCMAKE_INSTALL_PREFIX=/home/willingham/fusion/install -G Unix Makefiles
