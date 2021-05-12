@@ -66,11 +66,6 @@ namespace depthimage_to_laserscan
     void depthCb(const sensor_msgs::ImageConstPtr& depth_msg,
 		  const sensor_msgs::CameraInfoConstPtr& info_msg);
 
-    /**
-     * tanjx的修改
-     * laserscan的订阅回调
-     * */
-    void laserCb(const sensor_msgs::LaserScan::ConstPtr& msg);
 
     /**
      * Callback that is called when there is a new subscriber.
@@ -116,11 +111,6 @@ namespace depthimage_to_laserscan
      *             )	
      * */
     image_transport::CameraSubscriber sub_; ///< Subscriber for image_transport 图像传输订阅
-    /**
-     * tanjx的修改
-     * laserscan的订阅者
-     * */
-    ros::Subscriber laser_sub_;
     ros::Publisher pub_; ///< Publisher for output LaserScan messages 输出激光扫描信息的发布者
     dynamic_reconfigure::Server<depthimage_to_laserscan::DepthConfig> srv_; ///< Dynamic reconfigure server 动态重新配置服务器
 
