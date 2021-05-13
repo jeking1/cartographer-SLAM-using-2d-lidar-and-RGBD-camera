@@ -52,7 +52,7 @@ DepthImageToLaserScanROS::DepthImageToLaserScanROS(ros::NodeHandle& n, ros::Node
   // 延迟订阅深度图topic
   pub_ = n.advertise<sensor_msgs::LaserScan>("/scan", 10, boost::bind(&DepthImageToLaserScanROS::connectCb, this, _1), boost::bind(&DepthImageToLaserScanROS::disconnectCb, this, _1));
   pubs_ = n.advertise<sensor_msgs::LaserScan>("/depth_scan", 10);
-}
+}          
 
 DepthImageToLaserScanROS::~DepthImageToLaserScanROS(){
   sub_.shutdown();
@@ -120,10 +120,9 @@ void DepthImageToLaserScanROS::syncCb(const sensor_msgs::ImageConstPtr& ori_dept
     double d = 2.0*3.1415926535;
     s_msg->angle_min += 3.1415926;
     s_msg->angle_max += 3.1415926;
-    // if(s_msg->angle_max > 3.1415926535) s_msg->angle_min -= d,s_msg->angle_max -= d;
-    pubs_.publish(s_msg);
+    pubs_.publish(s_msg); //发布虚拟激光图 topic名称为/depth_scan
 
-    sensor_msgs::LaserScanPtr laser_msg_(new sensor_msgs::LaserScan());
+    sensor_msgs::LaserScanPtr laser_msg_(new sensor_msgs::LaserScan()); //去除订阅时const的影响
     laser_msg_->angle_increment = ori_laser->angle_increment;
     laser_msg_->angle_max = ori_laser->angle_max;
     laser_msg_->angle_min = ori_laser->angle_min;
@@ -134,8 +133,8 @@ void DepthImageToLaserScanROS::syncCb(const sensor_msgs::ImageConstPtr& ori_dept
     laser_msg_->scan_time = ori_laser->scan_time;
     laser_msg_->time_increment = ori_laser->time_increment;
     laser_msg_->ranges = ori_laser->ranges;
-    sensor_msgs::LaserScanPtr msg = dtl_.fusion_msg(laser_msg_,s_msg);
-    pub_.publish(msg);
+    sensor_msgs::LaserScanPtr msg = dtl_.fusion_msg(laser_msg_,s_msg);  //数据融合
+    pub_.publish(msg);  // 发布融合后的激光图
   }
   catch (std::runtime_error& e)
   {
@@ -157,19 +156,16 @@ void DepthImageToLaserScanROS::connectCb(const ros::SingleSubscriberPublisher& p
     sync_->registerCallback(boost::bind(&DepthImageToLaserScanROS::syncCb,this,_1,_2,_3));
 
 
-
+    //订阅深度图
     // image_transport::TransportHints hints("raw", ros::TransportHints(), pnh_);
     // sub_ = it_.subscribeCamera("image", 10, &DepthImageToLaserScanROS::depthCb, this, hints);
 
+    //订阅雷达信息
     /**
      * ros::Subscriber laser_sub_ = pnh_.subscribe("/laser_scan", 10, DepthImageToLaserScanROS::laserCb); 报错，需要用下面这句话
      * */
     // ros::Subscriber* laser_sub_ = new ros::Subscriber(pnh_.subscribe<sensor_msgs::LaserScan>("/laser_scan", 10, &DepthImageToLaserScanROS::laserCb,this));
 
-    //同步时间
-    // typedef sync_policies::ApproximateTime<sensor_msgs::Image,sensor_msgs::LaserScan> MySyncPolicy;
-    // Synchronizer<MySyncPolicy> sync(MySyncPolicy(10),sub_,laser_sub_);
-    // sync.registerCallback(boost::bind(&syncCb,_1,_2));
 
   }
 }

@@ -279,76 +279,35 @@ namespace depthimage_to_laserscan
     * tanjx的修改
     * 激光和虚拟激光数据融合
     * 
+    * 两种思路：
+    * 1. 遍历激光雷达数据的ranges，搜索每个角度在相机坐标系下对应的角度，并与对应角度的虚拟激光数据对比，选择较小距离值作为融合数据
+    * 2. 遍历虚拟激光雷达的ranges，搜索每个角度在雷达坐标系下对应的角度，并与对应角度的激光雷达数据对比，选择较小距离值作为融合数据
+    * 
+    * 经实际代码运行测试，第二种方法因未知原因融合失败，未调试出原因，故使用第一种方法对两个数据进行融合。
+    * 
     */
 
-   /**
-   *       data: [ 9.4739916886681130e-01, 2.2130862573608440e-02,
-       -3.1928833325416595e-01, -1.7949002487082114e-01,
-       3.1960787078675879e-01, -1.1809700273904222e-01,
-       9.4016163869581981e-01, -5.5618504000562126e-02,
-       -1.6900407143905755e-02, -9.9275541945929602e-01,
-       -1.1895820010645553e-01, -5.9308159627838385e-02, 0., 0., 0., 1. ]
-
-2021.5.7.11h51
-data: [ 9.2815982406332631e-01, 1.6620644424378272e-01,
-       -3.3300864686457243e-01, -1.8846368838351693e-01,
-       3.4972254724462082e-01, -8.3364791391535631e-02,
-       9.3313688787068072e-01, -1.0806183779318781e-01,
-       1.2733216774825257e-01, -9.8256080190901351e-01,
-       -1.3550199116045025e-01, 5.4403586555472061e-02, 0., 0., 0., 1. ]
-
-2021.5.7.12h16
-   data: [ 9.3016524337823114e-01, -1.5146811419525830e-01,
-       -3.3443987560284760e-01, -1.8498225722409428e-01,
-       2.9179133748856401e-01, -2.4786642655159263e-01,
-       9.2380736625942683e-01, -8.8327301508334691e-02,
-       -2.2282377650904073e-01, -9.5688016228296635e-01,
-       -1.8635965135074972e-01, 1.0238927970398511e-01, 0., 0., 0., 1. ]
-
-2021.5.7.14h7
-   data: [ 9.4666707641078052e-01, 6.1529997776840734e-02,
-       -3.1628390065485079e-01, -1.9404330939716322e-01,
-       3.2119116331499598e-01, -2.5832894171072995e-01,
-       9.1109955245460106e-01, -1.0009342076037800e-01,
-       -2.5645331899296991e-02, -9.6409554363050387e-01,
-       -2.6431439556630032e-01, 1.0820979329313304e-01, 0., 0., 0., 1. ]
-
-2021.5.7.17h36
-   data: [ 9.4398917910098268e-01, 1.0584976027731757e-02,
-       -3.2980659184246952e-01, -1.9170186586126101e-01,
-       3.2532664767222541e-01, -1.9705212104754133e-01,
-       9.2484216702365851e-01, -1.1474548681100917e-01,
-       -5.5199656290638444e-02, -9.8033587095094987e-01,
-       -1.8945864475456875e-01, 1.2973188784604420e-01, 0., 0., 0., 1. ]
-       B =
-
-0.8405    0.5106   -0.1813    0.1273
-   -0.3626    0.2815   -0.8884    0.0436
-   -0.4026    0.8125    0.4217    0.0028
-         0         0         0    1.0000
-      **/
+   //旋转矩阵R
   double R[4][4] = {0,0,0,0,
-                   0,9.4398917910098268e-01, 1.0584976027731757e-02,
-       -3.2980659184246952e-01,
-                   0,-1.9170186586126101e-01,
-       3.2532664767222541e-01, -1.9705212104754133e-01,
-                   0,9.2484216702365851e-01, -1.1474548681100917e-01,
-       -5.5199656290638444e-02};
-  
+                   0,9.4398917910098268e-01, 1.0584976027731757e-02,-3.2980659184246952e-01,
+                   0,-1.9170186586126101e-01,3.2532664767222541e-01, -1.9705212104754133e-01,
+                   0,9.2484216702365851e-01, -1.1474548681100917e-01,-5.5199656290638444e-02};
+  //平移矩阵T
   double T[4][2] = {0,0,
                    0,-9.8033587095094987e-01,
                    0,-1.8945864475456875e-01, 
                    0, 1.2973188784604420e-01};
-
+  //外参矩阵的逆矩阵，可用于从相机坐标系向雷达坐标系转换
   double inv[4][4] = {0.8405 ,   0.5106 ,  -0.1813,    0.1273,
    -0.3626  ,  0.2815  , -0.8884   , 0.0436,
    -0.4026  ,  0.8125  ,  0.4217,    0.0028,
          0      ,   0     ,    0  ,  1.0000};
+  // xyz三元组
   struct kinect_Triplet{
     double x,y,z;
   };
 
-
+  // 从雷达坐标系转移到相机坐标系，通过R、T矩阵转移，R、T矩阵由标定得到
    kinect_Triplet laser_to_kinect(double r,double a,const double l = 0.01){
 // r,a是雷达测得的数据,r是距离，a是偏移角，而l是相机与雷达硬件在y轴(高度)上的距离，需要手动输入
     kinect_Triplet kinect_Triplet_temp;
@@ -359,7 +318,7 @@ data: [ 9.2815982406332631e-01, 1.6620644424378272e-01,
     kinect_Triplet_temp.z = R[3][1]*rsina+R[3][2]*l+R[3][3]*rcosa+T[3][1];
     return kinect_Triplet_temp;
   }
-
+  // 由xyz三元组变为虚拟激光点，此次代码中只设计激光雷达点转为xyz三元组后再转为虚拟激光点，因此只需去除y值，则得到对应的xoz平面上的虚拟点
   std::pair<double,double> virtual_laser_scan(kinect_Triplet kinect_Triplet_temp){
     //因为转化后的三元组只代表一个点，因此只需要去掉y值，就是在x0z平面上的虚拟激光点。
     double d = std::sqrt(kinect_Triplet_temp.x*kinect_Triplet_temp.x+kinect_Triplet_temp.z*kinect_Triplet_temp.z);
@@ -367,121 +326,56 @@ data: [ 9.2815982406332631e-01, 1.6620644424378272e-01,
     if(kinect_Triplet_temp.z != 0) a = std::atan(kinect_Triplet_temp.x/kinect_Triplet_temp.z);
     return std::make_pair(d,a);
   }
-
+  // 如果对精度有要求或者雷达和深度相机距离较远，可以使用外参矩阵的逆矩阵，实现从相机坐标系向雷达坐标系变换
   double kinect_to_laser_dis(double x,double z){
     double dsin = inv[0][0]*x + inv[0][2]*z + inv[0][3];
     double dcos = inv[2][0]*x + inv[2][2]*z + inv[2][3];
     return std::sqrt(dsin*dsin+dcos*dcos);
   }
-
+  // 数据融合代码
   sensor_msgs::LaserScanPtr fusion(sensor_msgs::LaserScanPtr& laser_msg,sensor_msgs::LaserScanPtr& scan_msg){
-    // sensor_msgs::LaserScanPtr msg(new sensor_msgs::LaserScan());
-    // msg->angle_increment = laser_msg->angle_increment;
-    // msg->angle_max = laser_msg->angle_max;
-    // msg->angle_min = laser_msg->angle_min;
-    // msg->header = laser_msg->header;
-    // msg->intensities = laser_msg->intensities;
-    // msg->range_max = laser_msg->range_max;
-    // msg->range_min = laser_msg->range_min;
-    // msg->scan_time = laser_msg->scan_time;
-    // msg->time_increment = laser_msg->time_increment;
-    // msg->ranges=laser_msg->ranges;
-    
+    // laser_msg为激光雷达数据，scan_msg为深度图转换的虚拟激光雷达数据
     int scan_msg_num_direction = std::ceil((scan_msg->angle_max - scan_msg->angle_min) / scan_msg->angle_increment);
     int laser_msg_num_direction = std::ceil((laser_msg->angle_max - laser_msg->angle_min) / laser_msg->angle_increment);
-//     ROS_INFO("<---------DEBUG--------->");
-//     ROS_INFO("scan_msg's angle_max is %f", scan_msg->angle_max);
-//     ROS_INFO("scan_msg's angle_min is %f", scan_msg->angle_min);
-//     ROS_INFO("laser_msg's angle_max is %f", laser_msg->angle_max);
-//     ROS_INFO("laser_msg's angle_min is %f", laser_msg->angle_min);
-// ROS_INFO("scan_msg_num_direction is %d", scan_msg_num_direction);
-// ROS_INFO("laser_msg_num_direction is %d", laser_msg_num_direction);
-    // ROS_INFO("laser_msg's angle_increment is %f", laser_msg->angle_increment);
-    // ROS_INFO("laser_msg's num_direction is %d", laser_msg->ranges.size());
-    // ROS_INFO("scan_msg's num_direction is  %d", scan_msg->ranges.size());
-    // ROS_INFO("scan_msg_num_direction = %d",scan_msg_num_direction);
-    // ROS_INFO("laser_msg_num_direction = %d",laser_msg_num_direction); 
-    // ROS_INFO("<---------DEBUG--------->");
     for(int i = 0; i < laser_msg_num_direction; ++i){
-      //循环遍历每个二元组(r,a)
-      if(!std::isfinite(laser_msg->ranges[i])) continue;
-      // kinect_Triplet kinect_Triplet_temp = laser_to_kinect(laser_msg->ranges[i],(laser_msg->angle_min+laser_msg->angle_increment*i));//暂时缺少l具体值
-      // ROS_INFO("<---------DEBUG--------->");
-      // ROS_INFO("x = %f", kinect_Triplet_temp.x);
-      // ROS_INFO("y = %f", kinect_Triplet_temp.y);
-      // ROS_INFO("z = %f", kinect_Triplet_temp.z);
-      // ROS_INFO("<---------DEBUG--------->");
+      
+      if(!std::isfinite(laser_msg->ranges[i])) continue;  //循环遍历每个二元组(r,a)
+      /**
+       * 思路：因为雷达和相机在实际的摆放中距离很近，并且是平行放置，所以与障碍物之间的差值选择了忽略，
+       * 如果放置的较远、非平行放置或对精度有要求，可以使用kinect_to_laser_dis()函数
+       * */
+      // kinect_Triplet kinect_Triplet_temp = laser_to_kinect(laser_msg->ranges[i],(laser_msg->angle_min+laser_msg->angle_increment*i));
       // std::pair<double,double> virtual_laser_scan_temp = virtual_laser_scan(kinect_Triplet_temp); //temp.first = d,temp.second = a
       // int j = (virtual_laser_scan_temp.second - scan_msg->angle_min) / scan_msg->angle_increment; //获取该点在scan_msg中是第几个点
       // double range = 0.0;
-      // ROS_INFO("<---------DEBUG--------->");
-      // ROS_INFO("laser_msg->ranges[i] = %f",laser_msg->ranges[i]);
-      // ROS_INFO("laser_msg->angle_min+laser_msg->angle_increment*i = %f",laser_msg->angle_min+laser_msg->angle_increment*i);
-      // ROS_INFO("kinect_Triplet_temp.z = %f",kinect_Triplet_temp.x);
-      // ROS_INFO("kinect_Triplet_temp.z = %f",kinect_Triplet_temp.z);
-      // ROS_INFO("virtual_laser_scan_temp.first is %f",virtual_laser_scan_temp.first);
-      // ROS_INFO("virtual_laser_scan_temp.second is %f",virtual_laser_scan_temp.second);
-      // ROS_INFO("j is %d",j);
-      // ROS_INFO("virtual_laser_scan_temp.first is finite?   %d",std::isfinite(virtual_laser_scan_temp.first));
-      // ROS_INFO("virtual_laser_scan_temp.second is finite?   %d",std::isfinite(virtual_laser_scan_temp.second));
-      // ROS_INFO("<---------DEBUG--------->\n");
       // if(!std::isfinite(scan_msg->ranges[j])) continue;
-      // if(!std::isfinite(virtual_laser_scan_temp.first)) continue;
-      // if(!std::isfinite(virtual_laser_scan_temp.first)){
-      //   if(j < scan_msg_num_direction && j >= 0 && scan_msg->ranges[j] < msg->ranges[i]){
-      //     msg->ranges[i] = scan_msg->ranges[j];
-      //     continue;
-      //   }
-      // }
-      // else {
-      //   range = (scan_msg->ranges[j] < virtual_laser_scan_temp.first) ? scan_msg->ranges[j]:virtual_laser_scan_temp.first;
-      //   if(j < scan_msg_num_direction && j >= 0 && range < msg->ranges[i] && fabs(range - msg->ranges[i])){
-      //     msg->ranges[i] = range;
-      //     continue;
-      //   }
-      // }
+      
 
-/**
- * 测试直接相机坐标系旋转
- * 
- * */
-    double l_angle = laser_msg->angle_min+laser_msg->angle_increment*i;
-    double pi = 3.1415926535;
+      /**
+       * 测试直接相机坐标系旋转
+       * 
+       * 因为标定出来的旋转矩阵不尽人意，所以通过在rviz中对topic观察，发现深度图转换的激光图与二维激光雷达采集的激光图只需旋转180°即可重合。
+       * 因此，采用直接对虚拟激光数据进行旋转，使两个激光数据在角度上对应
+       * */
+      double l_angle = laser_msg->angle_min+laser_msg->angle_increment*i;
+      double pi = 3.1415926535;
+      
+      if(l_angle > scan_msg->angle_min && l_angle < scan_msg->angle_max){ //如果对应角度在虚拟激光范围内，则对两个数据进行对比，选择较小的作为融合数据
+        int k = (l_angle - scan_msg->angle_min )/scan_msg->angle_increment;
+        //如果深度图抖动的比较厉害，可以选择添加条件fabs(scan_msg->ranges[k] - laser_msg->ranges[i]) > 0.1 ,
+        // 即虚拟数据与激光数据的差值大于10厘米才更新，好处是可以消除一些散乱点，坏处是对墙边的障碍物信息有较大影响
+        // 好在TOF得到的深度图虽然抖动，但是抖动幅度很小，基本上可以忽略
+          if(scan_msg->ranges[k] < laser_msg->ranges[i])  
+            laser_msg->ranges[i] = scan_msg->ranges[k];
 
-    if(l_angle > scan_msg->angle_min && l_angle < scan_msg->angle_max){
-      ROS_INFO("<---------DEBUG1--------->");
-      ROS_INFO("l_angle is %f",l_angle);
-    ROS_INFO("scan_msg's angle_max is %f", scan_msg->angle_max);
-    ROS_INFO("scan_msg's angle_min is %f", scan_msg->angle_min);
-    ROS_INFO("laser_msg's angle_max is %f", laser_msg->angle_max);
-    ROS_INFO("laser_msg's angle_min is %f", laser_msg->angle_min);
-      ROS_INFO("<---------DEBUG1--------->");
-      int k = (l_angle - scan_msg->angle_min )/scan_msg->angle_increment;
+      }
+      if(l_angle+2.0*pi > scan_msg->angle_min && l_angle+2.0*pi < scan_msg->angle_max){ //手动旋转的角度可能会导致虚拟激光角度大于pi，所以需要额外判断大于pi的部分
+        int k = (l_angle+2*pi - scan_msg->angle_min )/scan_msg->angle_increment;
         if(scan_msg->ranges[k] < laser_msg->ranges[i])
           laser_msg->ranges[i] = scan_msg->ranges[k];
-
-    }
-    if(l_angle+2.0*pi > scan_msg->angle_min && l_angle+2.0*pi < scan_msg->angle_max){
-            ROS_INFO("<---------DEBUG2--------->");
-      ROS_INFO("l_angle is %f",l_angle);
-    ROS_INFO("scan_msg's angle_max is %f", scan_msg->angle_max);
-    ROS_INFO("scan_msg's angle_min is %f", scan_msg->angle_min);
-    ROS_INFO("laser_msg's angle_max is %f", laser_msg->angle_max);
-    ROS_INFO("laser_msg's angle_min is %f", laser_msg->angle_min);
-      ROS_INFO("<---------DEBUG2--------->");
-      int k = (l_angle+2*pi - scan_msg->angle_min )/scan_msg->angle_increment;
-      if(scan_msg->ranges[k] < laser_msg->ranges[i] && fabs(scan_msg->ranges[k] - laser_msg->ranges[i]) > 0.1)
-        laser_msg->ranges[i] = scan_msg->ranges[k];
-    }
+      }
     
 
-
-
-      // if(j < scan_msg_num_direction && j >= 0 && scan_msg->ranges[j] < virtual_laser_scan_temp.first && fabs(scan_msg->ranges[j] - virtual_laser_scan_temp.first) > 0.1){
-      //   msg->ranges[i] = scan_msg->ranges[j]; 
-      //   // msg->ranges[i] = 1.0;
-      //   // msg->ranges[i] = kinect_to_laser_dis(scan_msg->ranges[j]*std::sin(scan_msg->angle_min+scan_msg->angle_increment*j),scan_msg->ranges[j]*std::cos(scan_msg->angle_min+scan_msg->angle_increment*j));
-      // }
     }
 
     return laser_msg;
