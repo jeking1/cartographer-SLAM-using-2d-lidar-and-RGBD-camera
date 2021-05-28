@@ -11,13 +11,18 @@ fusion_camera_lidar
 node name: depthimage_to_laserscan
 
 Subscriptions:
-/laser_scan 
-/camera/depth/image_rect_raw 
-/camera/depth/camera_info
+
+    /laser_scan
+    
+    /camera/depth/image_rect_raw 
+    
+    /camera/depth/camera_info
 
 Publications：
-/scan       (cartographer订阅使用)
-/depth_scan (发布深度图转换的虚拟激光图，方便在rviz中对比观察)
+
+  /scan       (cartographer订阅使用)
+  
+  /depth_scan (发布深度图转换的虚拟激光图，方便在rviz中对比观察)
 
 
 
