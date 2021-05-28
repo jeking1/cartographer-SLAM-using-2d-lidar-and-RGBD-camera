@@ -12,12 +12,12 @@ node name: depthimage_to_laserscan
 
 Subscriptions:
 
-    /laser_scan
-    
-    /camera/depth/image_rect_raw 
-    
-    /camera/depth/camera_info
+ /laser_scan
 
+ /camera/depth/image_rect_raw 
+
+ /camera/depth/camera_info
+  
 Publications：
 
   /scan       (cartographer订阅使用)
